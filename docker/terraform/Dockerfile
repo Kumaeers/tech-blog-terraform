@@ -14,8 +14,8 @@ ENV PATH $PATH:/root/.local/bin
 RUN apt-get update && apt-get install -y less vim wget unzip
 
 # install terraform.
-RUN wget https://releases.hashicorp.com/terraform/0.12.7/terraform_0.12.7_linux_amd64.zip && \
-    unzip ./terraform_0.12.7_linux_amd64.zip -d /usr/local/bin/
+RUN wget https://releases.hashicorp.com/terraform/0.12.5/terraform_0.12.5_linux_amd64.zip && \
+    unzip ./terraform_0.12.5_linux_amd64.zip -d /usr/local/bin/
 
 # create workspace.
 COPY ./src /root/src
