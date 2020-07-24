@@ -123,3 +123,47 @@ data "aws_iam_policy_document" "alb_log" {
     }
   }
 }
+
+# vpc
+resource "aws_vpc" "example" {
+  # 10.0までがvpcになる
+  cidr_block            = "10.0.0.0/16"
+  # AWSのDNSサーバーによる名前解決を有効にする
+  enable_dns_support    = true
+  # あわせて、VPC 内のリソースにパブリックDNSホスト名を自動的に割り当てるため、enable_dns_hostnamesをtrueに
+  example_dns_hostnames = true
+
+  # Nameタグでこのvpcを識別できるようにする
+  tags = {
+    Name = "example"
+  }
+}
+
+# vpcのサブネット
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.example.id
+  # 特にこだわりがなければ、VPC では「/16」単位、サブネットでは「/24」単位にすると分かりやすい 
+  # 10.0.0までがサブネット
+  cidr_block              = "10.0.0.0/24"
+  # そのサブネットで起動したインスタンスにパブリックIPアドレスを自動的に割り当てる
+  map_public_ip_on_launch = true
+  availability_zone       = "ap-northeast-1a"
+}
+
+# vpcとインターネットの接続のため
+resource "aws_internet_gateway" "example" {
+  vpc_id = aws_vpc.example.id
+}
+
+# インターネットゲートウェイからネットワークにデータを流すため、ルーティング情報を管理するルートテーブルが必要
+# ローカルルートが自動作成されvpc内で通信できるようになる　これはterraformでも管理はできない
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.example.id
+}
+
+# どのサブネットにルートテーブルを当てるのか定義
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
