@@ -140,14 +140,21 @@ resource "aws_vpc" "example" {
 }
 
 # vpcのサブネット
-resource "aws_subnet" "public" {
+resource "aws_subnet" "public_0" {
   vpc_id                  = aws_vpc.example.id
   # 特にこだわりがなければ、VPC では「/16」単位、サブネットでは「/24」単位にすると分かりやすい 
   # 10.0.0までがサブネット
-  cidr_block              = "10.0.0.0/24"
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "ap-northeast-1a"
   # そのサブネットで起動したインスタンスにパブリックIPアドレスを自動的に割り当てる
   map_public_ip_on_launch = true
-  availability_zone       = "ap-northeast-1a"
+}
+
+resource "aws_subnet" "public_1" {
+  vpc_id                  = aws_vpc.example.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "ap-northeast-1c"
+  map_public_ip_on_launch = true
 }
 
 # vpcとインターネットの接続のため
