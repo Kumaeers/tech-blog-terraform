@@ -157,8 +157,17 @@ resource "aws_internet_gateway" "example" {
 
 # インターネットゲートウェイからネットワークにデータを流すため、ルーティング情報を管理するルートテーブルが必要
 # ローカルルートが自動作成されvpc内で通信できるようになる　これはterraformでも管理はできない
+# ルートのテーブル
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.example.id
+}
+
+# ルートはルートテーブルの1レコード
+# destination_cidr_blockで出口はインターネットなので、そのどこにもいけるということ
+resource "aws_route" "public" {
+  route_table_id         = aws_route_table.public.id
+  gateway_id             = aws_internet_gateway.example.id
+  destination_cidr_block = "0.0.0.0/0"
 }
 
 # どのサブネットにルートテーブルを当てるのか定義
@@ -167,3 +176,44 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+resource "aws_subnet" "private" {
+  vpc_id                  = aws_vpc.example.id
+  cidr_block              = "10.0.64.0/24"
+  availability_zone       = "ap-northeast-1a"
+  map_public_ip_on_launch = false
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.example.id
+}
+
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+# NATゲートウェイにelastic ipを割り当てる
+# NATにはpublic_ipが必要になるため
+resource "aws_eip" "nat_gateway" {
+  vpc          = true
+  # 実はpublicにいるinternet_gatewayに依存している
+  depends_on   = [aws_internet_gateway.example] 
+}
+
+# NATの定義
+resource "aws_nat_gateway" "example" {
+  # eipをNATに割り当て
+  allocation_id = aws_eip.nat_gateway.id
+  # NATはプライベートじゃなくpublicサブネットに置く
+  subnet_id     = aws_subnet.public.id
+  # 実はpublicにいるinternet_gatewayに依存している
+  depends_on    = [aws_internet_gateway.example]
+}
+
+# privateのルートテーブルにNATのルートを追加
+resource "aws_route" "private" {
+  route_table_id         = aws_route_table.private.id
+  # privateからのネットへの接続のため、nat_gate_way
+  nat_gateway_id         = aws_nat_gateway.example.id
+  destination_cidr_block = "0.0.0.0/0"
+}
