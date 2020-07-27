@@ -1,52 +1,57 @@
 # IAM ロールでは、自身をなんのサービスに関連付けるか宣言する = 信頼ポリシー 誰がそれをできるか定義
-data "aws_iam_policy_document" "ec2_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
+# data "aws_iam_policy_document" "ec2_assume_role" {
+#   statement {
+#     actions = ["sts:AssumeRole"]
 
-    principals {
-      type        = "Service"
-      # このIAMロールはEC2にのみ関連付けできる
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
+#     principals {
+#       type        = "Service"
+#       # このIAMロールはEC2にのみ関連付けできる
+#       identifiers = ["ec2.amazonaws.com"]
+#     }
+#   }
+# }
 
-# exampleはdescribeのポリシーという設定　ポリシードキュメントを保持するリソース
-resource "aws_iam_policy" "example" {
-  name   = "example"
-  policy = data.aws_iam_policy_document.allow_describe_regions.json
-}
+# # exampleはdescribeのポリシーという設定　ポリシードキュメントを保持するリソース
+# resource "aws_iam_policy" "example" {
+#   name   = "example"
+#   policy = data.aws_iam_policy_document.allow_describe_regions.json
+# }
 
-# ロール名と信頼ポリシーを指定
-resource "aws_iam_role" "example" {
-  name               = "example"
-  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
-}
+# # ロール名と信頼ポリシーを指定
+# resource "aws_iam_role" "example" {
+#   name               = "example"
+#   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
+# }
  
-# IAM ロールにIAM ポリシーをアタッチする　
-# IAM ロールとIAM ポリシーは、関連付けないと機能しない 
-resource "aws_iam_role_policy_attachment" "example" {
-  role       = aws_iam_role.example.name
-  policy_arn = aws_iam_policy.example.arn
-}
+# # IAM ロールにIAM ポリシーをアタッチする　
+# # IAM ロールとIAM ポリシーは、関連付けないと機能しない 
+# resource "aws_iam_role_policy_attachment" "example" {
+#   role       = aws_iam_role.example.name
+#   policy_arn = aws_iam_policy.example.arn
+# }
 
-# 何ができるのかを定義
-# ・Effect：Allow（許可）またはDeny（拒否）
-# ・Action： なんのサービスで、どんな操作が実行できるか
-# ・Resource： 操作可能なリソースはなにか
-data "aws_iam_policy_document" "allow_describe_regions" {
-  statement {
-    effect    = "Allow"
-    actions   = ["ec2:DescribeRegions"] # リージョン一覧を取得する
-    resources = ["*"]
-  }
-}
+# # 何ができるのかを定義
+# # ・Effect：Allow（許可）またはDeny（拒否）
+# # ・Action： なんのサービスで、どんな操作が実行できるか
+# # ・Resource： 操作可能なリソースはなにか
+# data "aws_iam_policy_document" "allow_describe_regions" {
+#   statement {
+#     effect    = "Allow"
+#     actions   = ["ec2:DescribeRegions"] # リージョン一覧を取得する
+#     resources = ["*"]
+#   }
+# }
 
-module "describe_regions_for_ec2" {
-  source     = "./iam_role"
-  name       = "describe_regions_for_ec2"
-  identifier = "ec2.amazonaws.com"
-  policy     = data.aws_iam_policy_document.allow_describe_regions.json
+# module "describe_regions_for_ec2" {
+#   source     = "./iam_role"
+#   name       = "describe_regions_for_ec2"
+#   identifier = "ec2.amazonaws.com"
+#   policy     = data.aws_iam_policy_document.allow_describe_regions.json
+# }
+
+provider "aws" {
+  profile = "default"
+  region  = "ap-northeast-1"
 }
 
 # プライベートのバケット
@@ -131,7 +136,7 @@ resource "aws_vpc" "example" {
   # AWSのDNSサーバーによる名前解決を有効にする
   enable_dns_support    = true
   # あわせて、VPC 内のリソースにパブリックDNSホスト名を自動的に割り当てるため、enable_dns_hostnamesをtrueに
-  example_dns_hostnames = true
+  enable_dns_hostnames = true
 
   # Nameタグでこのvpcを識別できるようにする
   tags = {
@@ -254,14 +259,14 @@ resource "aws_nat_gateway" "nat_gateway_0" {
   # eipをNATに割り当て
   allocation_id = aws_eip.nat_gateway_0.id
   # NATはプライベートじゃなくpublicサブネットに置く
-  subnet_id     = aws_subnet.public.id
+  subnet_id     = aws_subnet.public_0.id
   # 実はpublicにいるinternet_gatewayに依存している
   depends_on    = [aws_internet_gateway.example]
 }
 
 resource "aws_nat_gateway" "nat_gateway_1" {
   allocation_id = aws_eip.nat_gateway_1.id
-  subnet_id     = aws_subnet.public.id
+  subnet_id     = aws_subnet.public_1.id
   depends_on    = [aws_internet_gateway.example]
 }
 
@@ -276,3 +281,143 @@ module "example_sg" {
   cidr_blocks = ["0.0.0.0/0"]
 }
 
+# ALB
+resource "aws_lb" "example" {
+  name                        = "example"
+  load_balancer_type          = "application"
+  # vpc向けのalbの場合はinternalはtrue
+  internal                    = false
+  # タイムアウトのデフォルト値は60
+  idle_timeout                = 60
+  # 削除保護　本番で誤って消さないように
+  # enable_deletion_protection  = true
+  enable_deletion_protection  = false
+
+  # albが属するsubnetを指定　複数指定してクロスゾーンの負荷分散にする
+  subnets = [
+    aws_subnet.public_0.id,
+    aws_subnet.public_1.id,
+  ]
+
+  # s3にログを吐きだす
+  access_logs {
+    bucket  = aws_s3_bucket.alb_log.id
+    enabled = true
+  }
+
+  security_groups = [
+    module.http_sg.security_group_id,
+    module.https_sg.security_group_id,
+    module.http_redirect_sg.security_group_id,
+  ]
+}
+
+output "alb_dns_name" {
+  value = aws_lb.example.dns_name
+}
+
+# moduleでsgを定義
+module "http_sg" {
+  source      = "./security_group"
+  name        = "http-sg"
+  vpc_id      = aws_vpc.example.id
+  port        = 80
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
+module "https_sg" {
+  source      = "./security_group"
+  name        = "https-sg"
+  vpc_id      = aws_vpc.example.id
+  port        = 443
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
+module "http_redirect_sg" {
+  source      = "./security_group"
+  name        = "http-redirect-sg"
+  vpc_id      = aws_vpc.example.id
+  # redirectは8080
+  port        = 8080
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
+# リスナーでALBがどのポートのリクエストを受け付けるか定義
+# リスナーは複数ALBにアタッチできる
+resource "aws_lb_listener" "http" {
+  # listenerのルールは複数設定でき、異なるアクションを実行できる
+  load_balancer_arn = aws_lb.example.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  # どのルールにも合致しなければdefaultが実行される
+  # ・forward： リクエストを別のターゲットグループに転送
+  # ・fixed-response： 固定のHTTP レスポンスを応答
+  # ・redirect： 別のURL にリダイレクト
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "これは[HTTP]です"
+      status_code  = "200"
+    }
+  }
+}
+
+# ホストゾーンはDNSレコードを束ねるリソース　Route 53 でドメインを登録した場合は、自動的に作成されます。同時にNS レコードとSOA レコードも作成される
+data "aws_route53_zone" "example" {
+  name = "example.com"
+}
+
+resource "aws_route53_zone" "test_example" {
+  name = "test.example.com"
+}
+
+  
+resource "aws_route53_record" "example" {
+  zone_id = data.aws_route53_zone.example.zone_id
+  name    = data.aws_route53_zone.example.name
+  # CNAMEレコードは「ドメイン名→CNAME レコードのドメイン名→IP アドレス」という流れで名前解決を行う
+  # 一方、ALIAS レコードは「ドメイン名→IPアドレス」という流れで名前解決が行われ、パフォーマンスが向上する
+  # 今回はAレコード
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.example.dns_name
+    zone_id                = aws_lb.example.zone_id
+    evaluate_target_health = true
+  }
+}
+
+output "domain_name" {
+  value = aws_route53_record.example.name
+}
+
+resource "aws_acm_certificate" "example" {
+  domain_name               = aws_route53_record.example.name
+  # ドメイン名を追加したければ[]この中に指定する
+  subject_alternative_names = []
+  # 自動更新したい場合はドメインの所有権の検証方法をDNS検証にする
+  validation_method         = "DNS"
+
+  # ライフサイクルはTerraform独自の機能で、すべてのリソースに設定可能
+  # リソースを作成してから、リソースを削除する」という逆の挙動に変更
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_route53_record" "example_certificate" {
+  name    = aws_acm_certificate.example.domain_validation_options[0].resource_record_name
+  type    = aws_acm_certificate.example.domain_validation_options[0].resource_record_type
+  records = [aws_acm_certificate.example.domain_validation_options[0].resource_record_value]
+  zone_id = data.aws_route53_zone.example.id
+  ttl     = 60
+}
+
+# SSL 証明書の検証完了まで待機
+resource "aws_acm_certificate_validation" "example" {
+  certificate_arn         = aws_acm_certificate.example.arn
+  validation_record_fqdns = [aws_route53_record.example_certificate.fqdn]
+}
