@@ -365,16 +365,16 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# ホストゾーンはDNSレコードを束ねるリソース　Route 53 でドメインを登録した場合は、自動的に作成されます。同時にNS レコードとSOA レコードも作成される
+# ホストゾーンはDNSレコードを束ねるリソース　Route 53 でドメインを登録した場合は、自動的に作成されます。同時に4つのNSレコード（ネームサーバー）とSOAレコード(Start of Authority DNSの問い合わせを行ってくれる入り口のドメイン)も作成される
+# ドメインはterraformでは作成できないのでコンソールで登録する
 data "aws_route53_zone" "example" {
-  name = "example.com"
+  name = "kumaeers.example.com"
 }
 
-resource "aws_route53_zone" "test_example" {
-  name = "test.example.com"
-}
+# resource "aws_route53_zone" "test_example" {
+#   name = "test.example.com"
+# }
 
-  
 resource "aws_route53_record" "example" {
   zone_id = data.aws_route53_zone.example.zone_id
   name    = data.aws_route53_zone.example.name
@@ -420,4 +420,96 @@ resource "aws_route53_record" "example_certificate" {
 resource "aws_acm_certificate_validation" "example" {
   certificate_arn         = aws_acm_certificate.example.arn
   validation_record_fqdns = [aws_route53_record.example_certificate.fqdn]
+}
+
+# httpsのリスナー追加
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.example.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  # 作成したSSL証明書を設定
+  certificate_arn   = aws_acm_certificate.example.arn
+  # AWSで推奨されているセキュリティポリシーを設定
+  ssl               = "ELBSecurityPolicy-2016-08"
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "これは[HTTPS]です"
+      status_code  = "200"
+    }
+  }
+}
+
+# HTTPをHTTPSへリダイレクトするリスナー
+resource "aws_lb_listener" "redirect_http_to_https" {
+  load_balancer_arn = aws_lb.example.arn
+  port              = "8080"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    fixed_response {
+      port         = "443"
+      protocol     = "HTTPS"
+      status_code  = "HTTP_301"
+    }
+  }
+}
+
+# ターゲットグループ = ALBがリクエストをフォワードする対象
+resource "aws_lb_target_group" "example" {
+  name                  = "example"
+  # EC2インスタンスやIPアドレス、Lambda関数などが指定できる Fargateはipを指定する
+  target_type           = "ip"
+  # ipを指定した場合はさらに、vpc_id・port・protocolを設定
+  vpc_id                = aws_vpc.example.id
+  port                  = 80
+  # ALBからはHTTPプロトコルで接続を行う
+  protocol              = "HTTP"
+  # ターゲットの登録を解除する前に、ALBが待機する時間
+  deregistration_delay  = 300
+
+  health_check {
+    # ヘルスチェックで使用するパス
+    path                = "/"
+    # 正常判定を行うまでのヘルスチェック実行回数
+    healthy_threshold   = 5
+    # 異常判定を行うまでのヘルスチェック実行回数
+    unhealthy_threshold = 2
+    # ヘルスチェックのタイムアウト時間（秒）
+    timeout             = 5
+    # ヘルスチェックの実行間隔（秒）
+    interval            = 30
+    # 正常判定を行うために使用するHTTP ステータスコード
+    matcher             = 200
+    # ヘルスチェックで使用するポート traffic-portでは上で記述した80が使われる
+    port                = "traffic-port"
+    # ヘルスチェック時に使用するプロトコル
+    protocol            = "HTTP"
+  }
+
+  # アプリケーションロードバランサーとターゲットグループを、ECSと同時に作成するとエラーになるため依存関係を制御する
+  depends_on = [aws_lb.example]
+}
+
+# ターゲットグループへのリスナールール
+resource "aws_lb_listener" "example" {
+  listener_arn = aws_lb_listener.https.arn
+  # 数字が小さいほど、優先順位が高い なお、デフォルトルールはもっとも優先順位が低い
+  priority = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.example.arn
+  }
+
+  # conditionには、「/img/*」のようなパスベースや「example.com」のようなホストベースなどで、条件を指定でき「/*」はすべてのパスでマッチする
+  condition {
+    field = "path-pattern"
+    value = ["/*"]
+  }
 }
