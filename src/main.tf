@@ -532,6 +532,8 @@ resource "aws_ecs_task_definition" "example" {
   requires_compatibilities = ["FARGATE"]
   # 実際にタスクで実行するコンテナの定義
   container_definitions    = file("./container_definitions.json")
+  
+  execution_role_arn       = module.ecs_task_execution_role.iam_role_arn
 }
 
 # ECSサービスは起動するタスクの数を定義でき、指定した数のタスクを維持　なんらかの理由でタスクが終了してしまった場合、自動的に新しいタスクを起動してくれる
@@ -578,4 +580,36 @@ module "nginx_sg" {
   vpc_id = aws_vpc.example.id
   port = 80
   cidr_blocks = [aws_vpc.example.cidr_block]
+}
+
+# CloudWatchLogsでECSのログを取る
+resource "aws_cloudwatch_log_group" "for_ecs" {
+  name              = "/ecs/example"
+  # ログの保持期間
+  retention_in_days = 180
+}
+
+# 公式のECSの実行ロールを参照
+data "aws_iam_policy" "ecs_task_execution_role_policy" {
+  arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# ECSのポリシードキュメント
+data "aws_iam_policy_document" "ecs_task_execution" {
+  # 上で参照しているのを継承する
+  source_json = data.aws_iam_policy.ecs_task_execution_role_policy.policy
+
+  statement {
+    effect    = "Allow"
+    actions   = ["ssm:GetParameters", "kms:Decrypt"]
+    resources = ["*"]
+  }
+}
+
+# iam_roleモジュールで上記のポリシーを持ったロールを作成
+module "ecs_task_execution_role" {
+  source     = "./iam_role"
+  name       = "ecs-task-execution"
+  identifier = "ecs-tasks.amazonaws.com"
+  policy     = data.aws_iam_policy_document.ecs_task_execution.json
 }
