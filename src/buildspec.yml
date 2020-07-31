@@ -1,0 +1,25 @@
+version:0.2
+
+phases:
+  # 4つのフェーズを定義
+  # 使用するDocker のランタイムバージョンを指定
+  install:
+    runtime-versions:
+      docker: 18
+  # ECR にログイン
+  pre_build:
+    commands:
+    - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+    - REPO=$(aws ecr describe-repositories --repository-names example --output text --query "repositories[0].repositoryUri")
+    - IMAGE=$REPO:latest
+  # Docker イメージのビルドとプッシュ
+  build:
+    commands:
+    - docker build -t $IMAGE .
+    - docker push $IMAGE
+  # imagedefinitions.jsonファイルの作成
+  post_build:
+    commands:
+    - printf '[{"name":"example","imageUri":"%s"}]' $IMAGE > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json

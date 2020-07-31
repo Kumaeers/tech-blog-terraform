@@ -846,3 +846,95 @@ module "redis_sg" {
   port        = 6379
   cidr_blocks = [aws_vpc.example.cidr_block]
 }
+
+# ECR
+resource "aws_ecr_repository" "example" {
+  name = "example"
+}
+
+# ライフサイクルポリシーでイメージの数が増えすぎないように制御
+resource "aws_ecr_lifecycle_policy" "example" {
+  repository = aws_ecr_repository.example.name
+
+  policy = <<EOF
+  {
+    "rules": [
+      {
+        "rulePriority": 1,
+        "description": "Keep last 30 release tagged images",
+        "selection": {
+          "tagStatus": "tagged",
+          "tagPrefixList": ["release"],
+          "countType": "imageCountMoreThan",
+          "countNumber": 30
+        },
+        "action": {
+          "type": "expire"
+        }
+      }
+    ]
+  }
+  EOF
+}
+
+# build用のポリシー
+data "aws_iam_policy_document" "codebuild" {
+  statement {
+    effect    = "Allow"
+    resources = ["*"]
+
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:GetRepositoryPolicy",
+      "ecr:DescribeRepositories",
+      "ecr:ListImages",
+      "ecr:DescribeImages",
+      "ecr:BatchGetImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage",
+    ]
+  }
+}
+
+# build用のロール
+module "codebuild_role" {
+  source     = "./iam_role"
+  name       = "codebuild"
+  identifier = "codebuild.amazonaws.com"
+  policy     = data.aws_iam_policy_document.codebuild.json
+}
+
+# CodeBuildプロジェクト
+resource "aws_codebuild_project" "example" {
+  name          = "example"
+  service_role  = module.codebuild_role.iam_role_arn
+
+  # ビルド対象のソースをCodePipelineと連携する宣言
+  source {
+    type = "CODEPIPELINE"
+  }
+
+  # ビルド出力アーティファクトの格納先をCodePipelineと連携する宣言
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    type            = "LINUX_CONTAINER"
+    compute_type    = "BUILD_GENERAL1_SMALL"
+    image           = "aws/codebuild/standard:2.0"
+    # ビルド時にdocker コマンドを使うため、privileged_modeをtrueにして、特権を付与
+    privileged_mode = true
+  }
+}
+
