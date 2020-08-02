@@ -428,9 +428,9 @@ resource "aws_lb_listener" "https" {
   port              = "443"
   protocol          = "HTTPS"
   # 作成したSSL証明書を設定
-  certificate_arn = aws_acm_certificate.example.arn
+  certificate_arn   = aws_acm_certificate.example.arn
   # AWSで推奨されているセキュリティポリシーを設定
-  ssl = "ELBSecurityPolicy-2016-08"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
 
   default_action {
     type = "fixed-response"
@@ -452,7 +452,7 @@ resource "aws_lb_listener" "redirect_http_to_https" {
   default_action {
     type = "redirect"
 
-    fixed_response {
+    redirect {
       port        = "443"
       protocol    = "HTTPS"
       status_code = "HTTP_301"
@@ -497,7 +497,7 @@ resource "aws_lb_target_group" "example" {
 }
 
 # ターゲットグループへのリスナールール
-resource "aws_lb_listener" "example" {
+resource "aws_lb_listener_rule" "example" {
   listener_arn = aws_lb_listener.https.arn
   # 数字が小さいほど、優先順位が高い なお、デフォルトルールはもっとも優先順位が低い
   priority = 100
@@ -509,8 +509,8 @@ resource "aws_lb_listener" "example" {
 
   # conditionには、「/img/*」のようなパスベースや「example.com」のようなホストベースなどで、条件を指定でき「/*」はすべてのパスでマッチする
   condition {
-    field = "path-pattern"
-    value = ["/*"]
+    field  = "path-pattern"
+    values = ["/*"]
   }
 }
 
@@ -528,7 +528,7 @@ resource "aws_ecs_task_definition" "example" {
   # cpuに256を指定する場合、memoryで指定できる値は512・1024・2048のいずれか
   cpu                      = "256"
   memory                   = "512"
-  network_mode             = "aws_vpc"
+  network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   # 実際にタスクで実行するコンテナの定義
   container_definitions = file("./container_definitions.json")
@@ -676,6 +676,22 @@ module "ecs_task_execution_role" {
 #     }
 #   }
 # }
+
+resource "aws_kms_key" "example" {
+  description             = "Example Customer Master Key"
+  # 自動ローテーション
+  enable_key_rotation     = true
+  # カスタマーマスターキーをが有効か無効か
+  is_enabled              = true
+  # カスタマーマスターキーの削除は推奨されない 消したらこのカスタマーキーで作成した暗号は復号できなくなるため
+  deletion_window_in_days = 30
+}
+
+# カスタマーマスターキーにはそれぞれUUIDが割り当てられますが、人間には分かりづらい　そこでエイリアスを設定し、どういう用途で使われているか識別しやすくする
+resource "aws_kms_alias" "example" {
+  name          = "alias/example"
+  target_key_id = aws_kms_key.example.key_id
+}
 
 # DB用のSSMパラメータストア設定
 resource "aws_ssm_parameter" "db_username" {
