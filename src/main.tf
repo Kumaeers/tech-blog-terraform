@@ -970,19 +970,6 @@ module "codepipeline_role" {
   policy = data.aws_iam_policy_document.codepipeline.json
 }
 
-# CodePipeline の各ステージで、データの受け渡しに使用するアーティファクトストア
-resource "aws_s3_bucket" "artifact" {
-  bucket = "artifact-pragmatic-terraform"
-
-  lifecycle_rule {
-    enabled = true
-
-    expiration {
-      days = "180"
-    }
-  }
-}
-
 # CodePipeline の各ステージで、データの受け渡しに使用するアーティファクトストア用のS3バケット
 resource "aws_s3_bucket" "artifact" {
   bucket = "artifact-pragmatic-terraform"
