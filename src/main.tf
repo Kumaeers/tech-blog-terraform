@@ -22,7 +22,7 @@
 #   name               = "example"
 #   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 # }
- 
+
 # # IAM ロールにIAM ポリシーをアタッチする　
 # # IAM ロールとIAM ポリシーは、関連付けないと機能しない 
 # resource "aws_iam_role_policy_attachment" "example" {
@@ -75,10 +75,10 @@ resource "aws_s3_bucket" "private" {
 
 # プライベートバケットのパブリックアクセスを全てブロック
 resource "aws_s3_bucket_public_access_block" "private" {
-  bucket = aws_s3_bucket.private.id
-  block_public_acls = true
-  block_public_policy = true
-  ignore_public_acls = true
+  bucket                  = aws_s3_bucket.private.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
@@ -118,8 +118,8 @@ resource "aws_s3_bucket_policy" "alb_log" {
 # AWSが管理しているアカウントでALBから書き込みをする
 data "aws_iam_policy_document" "alb_log" {
   statement {
-    effect = "Allow"
-    actions = ["s3:PutObject"]
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
     resources = ["arn:aws:s3:::${aws_s3_bucket.alb_log.id}/*"]
 
     principals {
@@ -132,9 +132,9 @@ data "aws_iam_policy_document" "alb_log" {
 # vpc
 resource "aws_vpc" "example" {
   # 10.0までがvpcになる
-  cidr_block            = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
   # AWSのDNSサーバーによる名前解決を有効にする
-  enable_dns_support    = true
+  enable_dns_support = true
   # あわせて、VPC 内のリソースにパブリックDNSホスト名を自動的に割り当てるため、enable_dns_hostnamesをtrueに
   enable_dns_hostnames = true
 
@@ -146,11 +146,11 @@ resource "aws_vpc" "example" {
 
 # vpcのサブネット
 resource "aws_subnet" "public_0" {
-  vpc_id                  = aws_vpc.example.id
+  vpc_id = aws_vpc.example.id
   # 特にこだわりがなければ、VPC では「/16」単位、サブネットでは「/24」単位にすると分かりやすい 
   # 10.0.0までがサブネット
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "ap-northeast-1a"
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "ap-northeast-1a"
   # そのサブネットで起動したインスタンスにパブリックIPアドレスを自動的に割り当てる
   map_public_ip_on_launch = true
 }
@@ -219,7 +219,7 @@ resource "aws_route_table" "private_1" {
 
 # privateのルートテーブルにNATのルートを追加
 resource "aws_route" "private_0" {
-  route_table_id         = aws_route_table.private_0.id
+  route_table_id = aws_route_table.private_0.id
   # privateからのネットへの接続のため、nat_gate_way
   nat_gateway_id         = aws_nat_gateway.nat_gateway_0.id
   destination_cidr_block = "0.0.0.0/0"
@@ -244,14 +244,14 @@ resource "aws_route_table_association" "private_1" {
 # NATゲートウェイにelastic ipを割り当てる
 # NATにはpublic_ipが必要になるため
 resource "aws_eip" "nat_gateway_0" {
-  vpc          = true
+  vpc = true
   # 実はpublicにいるinternet_gatewayに依存している
-  depends_on   = [aws_internet_gateway.example] 
+  depends_on = [aws_internet_gateway.example]
 }
 
 resource "aws_eip" "nat_gateway_1" {
-  vpc          = true
-  depends_on   = [aws_internet_gateway.example] 
+  vpc        = true
+  depends_on = [aws_internet_gateway.example]
 }
 
 # NATの定義
@@ -259,9 +259,9 @@ resource "aws_nat_gateway" "nat_gateway_0" {
   # eipをNATに割り当て
   allocation_id = aws_eip.nat_gateway_0.id
   # NATはプライベートじゃなくpublicサブネットに置く
-  subnet_id     = aws_subnet.public_0.id
+  subnet_id = aws_subnet.public_0.id
   # 実はpublicにいるinternet_gatewayに依存している
-  depends_on    = [aws_internet_gateway.example]
+  depends_on = [aws_internet_gateway.example]
 }
 
 resource "aws_nat_gateway" "nat_gateway_1" {
@@ -283,15 +283,15 @@ module "example_sg" {
 
 # ALB
 resource "aws_lb" "example" {
-  name                        = "example"
-  load_balancer_type          = "application"
+  name               = "example"
+  load_balancer_type = "application"
   # vpc向けのalbの場合はinternalはtrue
-  internal                    = false
+  internal = false
   # タイムアウトのデフォルト値は60
-  idle_timeout                = 60
+  idle_timeout = 60
   # 削除保護　本番で誤って消さないように
   # enable_deletion_protection  = true
-  enable_deletion_protection  = false
+  enable_deletion_protection = false
 
   # albが属するsubnetを指定　複数指定してクロスゾーンの負荷分散にする
   subnets = [
@@ -334,9 +334,9 @@ module "https_sg" {
 }
 
 module "http_redirect_sg" {
-  source      = "./security_group"
-  name        = "http-redirect-sg"
-  vpc_id      = aws_vpc.example.id
+  source = "./security_group"
+  name   = "http-redirect-sg"
+  vpc_id = aws_vpc.example.id
   # redirectは8080
   port        = 8080
   cidr_blocks = ["0.0.0.0/0"]
@@ -381,7 +381,7 @@ resource "aws_route53_record" "example" {
   # CNAMEレコードは「ドメイン名→CNAME レコードのドメイン名→IP アドレス」という流れで名前解決を行う
   # 一方、ALIAS レコードは「ドメイン名→IPアドレス」という流れで名前解決が行われ、パフォーマンスが向上する
   # 今回はAレコード
-  type    = "A"
+  type = "A"
 
   alias {
     name                   = aws_lb.example.dns_name
@@ -395,11 +395,11 @@ output "domain_name" {
 }
 
 resource "aws_acm_certificate" "example" {
-  domain_name               = aws_route53_record.example.name
+  domain_name = aws_route53_record.example.name
   # ドメイン名を追加したければ[]この中に指定する
   subject_alternative_names = []
   # 自動更新したい場合はドメインの所有権の検証方法をDNS検証にする
-  validation_method         = "DNS"
+  validation_method = "DNS"
 
   # ライフサイクルはTerraform独自の機能で、すべてのリソースに設定可能
   # リソースを作成してから、リソースを削除する」という逆の挙動に変更
@@ -428,9 +428,9 @@ resource "aws_lb_listener" "https" {
   port              = "443"
   protocol          = "HTTPS"
   # 作成したSSL証明書を設定
-  certificate_arn   = aws_acm_certificate.example.arn
+  certificate_arn = aws_acm_certificate.example.arn
   # AWSで推奨されているセキュリティポリシーを設定
-  ssl               = "ELBSecurityPolicy-2016-08"
+  ssl = "ELBSecurityPolicy-2016-08"
 
   default_action {
     type = "fixed-response"
@@ -453,43 +453,43 @@ resource "aws_lb_listener" "redirect_http_to_https" {
     type = "redirect"
 
     fixed_response {
-      port         = "443"
-      protocol     = "HTTPS"
-      status_code  = "HTTP_301"
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
     }
   }
 }
 
 # ターゲットグループ = ALBがリクエストをフォワードする対象
 resource "aws_lb_target_group" "example" {
-  name                  = "example"
+  name = "example"
   # EC2インスタンスやIPアドレス、Lambda関数などが指定できる Fargateはipを指定する
-  target_type           = "ip"
+  target_type = "ip"
   # ipを指定した場合はさらに、vpc_id・port・protocolを設定
-  vpc_id                = aws_vpc.example.id
-  port                  = 80
+  vpc_id = aws_vpc.example.id
+  port   = 80
   # ALBからはHTTPプロトコルで接続を行う
-  protocol              = "HTTP"
+  protocol = "HTTP"
   # ターゲットの登録を解除する前に、ALBが待機する時間
-  deregistration_delay  = 300
+  deregistration_delay = 300
 
   health_check {
     # ヘルスチェックで使用するパス
-    path                = "/"
+    path = "/"
     # 正常判定を行うまでのヘルスチェック実行回数
-    healthy_threshold   = 5
+    healthy_threshold = 5
     # 異常判定を行うまでのヘルスチェック実行回数
     unhealthy_threshold = 2
     # ヘルスチェックのタイムアウト時間（秒）
-    timeout             = 5
+    timeout = 5
     # ヘルスチェックの実行間隔（秒）
-    interval            = 30
+    interval = 30
     # 正常判定を行うために使用するHTTP ステータスコード
-    matcher             = 200
+    matcher = 200
     # ヘルスチェックで使用するポート traffic-portでは上で記述した80が使われる
-    port                = "traffic-port"
+    port = "traffic-port"
     # ヘルスチェック時に使用するプロトコル
-    protocol            = "HTTP"
+    protocol = "HTTP"
   }
 
   # アプリケーションロードバランサーとターゲットグループを、ECSと同時に作成するとエラーになるため依存関係を制御する
@@ -524,29 +524,29 @@ resource "aws_ecs_cluster" "example" {
 # たとえば、Railsアプリケーションの前段にnginxを配置する場合、ひとつのタスクの中でRails コンテナとnginxコンテナが実行される
 resource "aws_ecs_task_definition" "example" {
   # タスク定義名のプレフィックスのこと example:1のようになる
-  family                   = "example"
+  family = "example"
   # cpuに256を指定する場合、memoryで指定できる値は512・1024・2048のいずれか
   cpu                      = "256"
   memory                   = "512"
   network_mode             = "aws_vpc"
   requires_compatibilities = ["FARGATE"]
   # 実際にタスクで実行するコンテナの定義
-  container_definitions    = file("./container_definitions.json")
+  container_definitions = file("./container_definitions.json")
 
-  execution_role_arn       = module.ecs_task_execution_role.iam_role_arn
+  execution_role_arn = module.ecs_task_execution_role.iam_role_arn
 }
 
 # ECSサービスは起動するタスクの数を定義でき、指定した数のタスクを維持　なんらかの理由でタスクが終了してしまった場合、自動的に新しいタスクを起動してくれる
 # またECSサービスはALBとの橋渡し役にもなり、インターネットからのリクエストはALBで受けそのリクエストをコンテナにフォワードさせる
 resource "aws_ecs_service" "example" {
-  name                              = "example"
-  cluster                           = aws_ecs_cluster.example.arn
-  task_definition                   = aws_ecs_task_definition.example.arn
+  name            = "example"
+  cluster         = aws_ecs_cluster.example.arn
+  task_definition = aws_ecs_task_definition.example.arn
   # 2個以上コンテナ起動する
-  desired_count                     = 2
-  launch_type                       = "FARGATE"
+  desired_count = 2
+  launch_type   = "FARGATE"
   # latestが最新ではないので明示的にする必要あり
-  platform_version                  = "1.3.0"
+  platform_version = "1.3.0"
   # タスク起動時のヘルスチェック猶予期間 0だとタスクの起動と終了が無限に続く可能性あり
   health_check_grace_period_seconds = 60
 
@@ -555,10 +555,10 @@ resource "aws_ecs_service" "example" {
     assign_public_ip = false
     security_groups  = [module.nginx_sg.security_group_id]
 
-    subnets = {
+    subnets = [
       aws_subnet.private_0.id,
       aws_subnet.private_1.id,
-    }
+    ]
   }
 
   # load_balancerでターゲットグループとコンテナの名前・ポート番号を指定し、上記のロードバランサーと関連付け
@@ -575,16 +575,16 @@ resource "aws_ecs_service" "example" {
 }
 
 module "nginx_sg" {
-  source = "./security_group"
-  name = "nginx-sg"
-  vpc_id = aws_vpc.example.id
-  port = 80
+  source      = "./security_group"
+  name        = "nginx-sg"
+  vpc_id      = aws_vpc.example.id
+  port        = 80
   cidr_blocks = [aws_vpc.example.cidr_block]
 }
 
 # CloudWatchLogsでECSのログを取る
 resource "aws_cloudwatch_log_group" "for_ecs" {
-  name              = "/ecs/example"
+  name = "/ecs/example"
   # ログの保持期間
   retention_in_days = 180
 }
@@ -730,7 +730,7 @@ resource "aws_db_option_group" "example" {
 
 # DBを起動するサブネットの定義
 resource "aws_db_subnet_group" "example" {
-  name       = "example"
+  name = "example"
   # 異なるサブネットを含めマルチAZ化
   subnet_ids = [aws_subnet.private_0.id, aws_subnet.private_1.id]
 }
@@ -738,43 +738,43 @@ resource "aws_db_subnet_group" "example" {
 # DB
 resource "aws_db_instance" "example" {
   # データベースのエンドポイントで使う識別子
-  identifier                 = "example"
-  engine                     = "mysql"
-  engine_version             = "5.7.25"
-  instance_class             = "db.t3.small"
-  allocated_storage          = 20
+  identifier        = "example"
+  engine            = "mysql"
+  engine_version    = "5.7.25"
+  instance_class    = "db.t3.small"
+  allocated_storage = 20
   # スケールアウト用
-  max_allocated_storage      = 100
+  max_allocated_storage = 100
   # 「汎用SSD」か「プロビジョンドIOPS」を設定 「gp2」は汎用SSD
-  storage_type               = "gp2"
-  storage_encrypted          = true
+  storage_type      = "gp2"
+  storage_encrypted = true
   # ディスク暗号化
-  kms_key_id                 = aws_kms_key.example.arn
-  username                   = "admin"
-  password                   = "VeryStrongPassword!"
+  kms_key_id = aws_kms_key.example.arn
+  username   = "admin"
+  password   = "VeryStrongPassword!"
   # aws_db_subnet_groupでmulti_azしてるため可能
-  multi_az                   = true
+  multi_az = true
   # VPC 外からのアクセスを遮断
-  publicly_accessible        = false
+  publicly_accessible = false
   # バックアップのタイミング
-  backup_window              = "09:10-09:40"
+  backup_window = "09:10-09:40"
   # バックアップ期間　最大35日
-  backup_retention_period    = 30
+  backup_retention_period = 30
   # メンテナンスのタイミング メンテナンス自体は無効化することはできない
   maintenance_window         = "mon:10:10-mon:10:40"
   auto_minor_version_upgrade = false
   # 削除保護
-  deletion_protection        = true
+  deletion_protection = true
   # インスタンス削除時のスナップショット作成
-  skip_final_snapshot        = false
-  port                       = 3306
+  skip_final_snapshot = false
+  port                = 3306
   # RDSでは一部の設定変更に再起動が伴うので即時反映を避ける
-  apply_immediately          = false
+  apply_immediately = false
   # VPC 内からの通信のみ許可
-  vpc_security_group_ids     = [module.mysql_sg.security_group_id]
-  parameter_group_name       = aws_db_parameter_group.example.name
-  option_group_name          = aws_db_option_group.example.name
-  db_subnet_group_name       = aws_db_subnet_group.example.name
+  vpc_security_group_ids = [module.mysql_sg.security_group_id]
+  parameter_group_name   = aws_db_parameter_group.example.name
+  option_group_name      = aws_db_option_group.example.name
+  db_subnet_group_name   = aws_db_subnet_group.example.name
 
   # ignore_changesで「password」を指定してapplyすることで、変更をtfstateに書かれるのを回避
   # 初期は平文で入力しのちに下のコマンドで変更する
@@ -785,10 +785,10 @@ resource "aws_db_instance" "example" {
 }
 
 module "mysql_sg" {
-  source      = "./security_group"
-  name        = "mysql-sg"
-  vpc_id      = aws_vpc.example.id
-  port        = 3306
+  source = "./security_group"
+  name   = "mysql-sg"
+  vpc_id = aws_vpc.example.id
+  port   = 3306
   # vpc内のみ通信許可
   cidr_blocks = [aws_vpc.example.cidr_block]
 }
@@ -818,25 +818,25 @@ resource "aws_elasticache_replication_group" "example" {
   replication_group_id          = "example"
   replication_group_description = "Cluster Disabled"
   # memcachedかredis
-  engine                        = "redis"
-  engine_version                = "5.0.4"
+  engine         = "redis"
+  engine_version = "5.0.4"
   # ノード数 プライマリー 1 + レプリカ 2 = 3
-  number_cache_clusters         = 3
+  number_cache_clusters = 3
   # 低スペックだとapplyに時間がすごくかかるらしい
-  node_type                     = "cache.m3.medium"
+  node_type = "cache.m3.medium"
   # スナップショットのタイミング
-  snapshot_window               = "09:10-10:10"
+  snapshot_window = "09:10-10:10"
   # スナップショット保存期間
-  snapshot_retention_limit      = 7
-  maintenance_window            = "mon:10:40-mon:11:40"
+  snapshot_retention_limit = 7
+  maintenance_window       = "mon:10:40-mon:11:40"
   # サブネットをマルチAZ化してるため自動フェイルオーバーが有効にできる
-  automatic_failover_enabled    = true
-  port                          = 6379
-  apply_immediately             = false
+  automatic_failover_enabled = true
+  port                       = 6379
+  apply_immediately          = false
   # vpc内のみ許可
-  security_group_ids            = [module.redis_sg.security_group_id]
-  parameter_group_name          = aws_elasticache_parameter_group.example.name
-  subnet_group_name             = aws_elasticache_subnet_group.example.name
+  security_group_ids   = [module.redis_sg.security_group_id]
+  parameter_group_name = aws_elasticache_parameter_group.example.name
+  subnet_group_name    = aws_elasticache_subnet_group.example.name
 }
 
 module "redis_sg" {
@@ -880,7 +880,7 @@ resource "aws_ecr_lifecycle_policy" "example" {
 # build用のポリシー
 data "aws_iam_policy_document" "codebuild" {
   statement {
-    effect    = "Allow"
+    effect = "Allow"
     resources = ["*"]
 
     actions = [
@@ -908,16 +908,16 @@ data "aws_iam_policy_document" "codebuild" {
 
 # build用のロール
 module "codebuild_role" {
-  source     = "./iam_role"
-  name       = "codebuild"
+  source = "./iam_role"
+  name = "codebuild"
   identifier = "codebuild.amazonaws.com"
-  policy     = data.aws_iam_policy_document.codebuild.json
+  policy = data.aws_iam_policy_document.codebuild.json
 }
 
 # CodeBuildプロジェクト
 resource "aws_codebuild_project" "example" {
-  name          = "example"
-  service_role  = module.codebuild_role.iam_role_arn
+  name = "example"
+  service_role = module.codebuild_role.iam_role_arn
 
   # ビルド対象のソースをCodePipelineと連携する宣言
   source {
@@ -930,11 +930,182 @@ resource "aws_codebuild_project" "example" {
   }
 
   environment {
-    type            = "LINUX_CONTAINER"
-    compute_type    = "BUILD_GENERAL1_SMALL"
-    image           = "aws/codebuild/standard:2.0"
+    type = "LINUX_CONTAINER"
+    compute_type = "BUILD_GENERAL1_SMALL"
+    image = "aws/codebuild/standard:2.0"
     # ビルド時にdocker コマンドを使うため、privileged_modeをtrueにして、特権を付与
     privileged_mode = true
   }
 }
 
+# CodePipeline用のポリシー
+data "aws_iam_policy_document" "codepipeline" {
+  statement {
+    effect = "Allow"
+    resources = ["*"]
+
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "s3:GetBucketVersioning",
+      "codebuild:BatchGetBuilds",
+      "codebuild:StartBuild",
+      "ecs:DescribeServices",
+      "ecs:DescribeTaskDefinition",
+      "ecs:DescribeTasks",
+      "ecs:ListTasks",
+      "ecs:RegisterTaskDefinition",
+      "ecs:UpdateService",
+      "iam:PassRole",
+    ]
+  }
+}
+
+# CodePipelineのロール
+module "codepipeline_role" {
+  source = "./iam_role"
+  name = "codepipeline"
+  identifier = "codepipeline.amazonaws.com"
+  policy = data.aws_iam_policy_document.codepipeline.json
+}
+
+# CodePipeline の各ステージで、データの受け渡しに使用するアーティファクトストア
+resource "aws_s3_bucket" "artifact" {
+  bucket = "artifact-pragmatic-terraform"
+
+  lifecycle_rule {
+    enabled = true
+
+    expiration {
+      days = "180"
+    }
+  }
+}
+
+# CodePipeline の各ステージで、データの受け渡しに使用するアーティファクトストア用のS3バケット
+resource "aws_s3_bucket" "artifact" {
+  bucket = "artifact-pragmatic-terraform"
+
+  lifecycle_rule {
+    enabled = true
+
+    expiration {
+      days = "180"
+    }
+  }
+}
+
+resource "aws_codepipeline" "example" {
+  name = "example"
+  role_arn = module.codepipeline_role.iam_role_arn
+
+
+  # GitHub からソースコードを取得する
+  stage {
+    name = "Source"
+
+    action {
+      name = "Source"
+      category = "Source"
+      owner = "ThirdParty"
+      provider = "GitHub"
+      version = 1
+      output_artifacts = ["Source"]
+
+      configuration = {
+        Owner = "your-github-name"
+        Repo = "your-repository"
+        Branch = "master"
+        # CodePipelineの起動はWebhookから行うため、PollForSourceChangesをfalseにしてポーリングは無効
+        PollForSourceChange = false
+      }
+    }
+  }
+
+  # CodeBuildを実行し、ECRにDockerイメージをプッシュする
+  stage {
+    name = "Build"
+
+    action {
+      name = "Build"
+      category = "Build"
+      owner = "AWS"
+      provider = "CodeBuild"
+      version = 1
+      input_artifacts = ["Source"]
+      output_artifacts = ["Build"]
+
+      configuration = {
+        ProjectName = aws_codebuild_project.example.id
+      }
+    }
+  }
+
+  # ECSへDockerイメージをデプロイする
+  stage {
+    name = "Deploy"
+
+    action {
+      name = "Deploy"
+      category = "Deploy"
+      owner = "AWS"
+      provider = "ECS"
+      version = 1
+      input_artifacts = ["Build"]
+
+      configuration = {
+        ClusterName = aws_ecs_cluster.example.name
+        ServiceName = aws_ecs_service.example.name
+        FileName = "imagedefinitions.json"
+      }
+    }
+  }
+
+  artifact_store {
+    location = aws_s3_bucket.artifact.id
+    type = "S3"
+  }
+}
+
+resource "aws_codepipeline_webhook" "example" {
+  name = "example"
+  # Webhookを受け取ったら起動するパイプライン
+  target_pipeline = aws_codepipeline.example.name
+  # そのアクション
+  target_action = "Source"
+  authentication = "GITHUB_HMAC"
+
+  # これはtfstateに書かれるが,gitignoreしてる
+  authentication_configuration {
+    secret_token = "VeryRandomStringMoreThan20Byte!"
+  }
+
+  # 起動条件　pipelineでmasterブランチを選択してるためそこになる
+  filter {
+    json_path = "$.ref"
+    match_equals = "refs/heads/{Branch}"
+  }
+}
+
+# githubのリソースを操作するためproviderを定義
+provider "github" {
+  organization = "your-github-name"
+}
+
+
+# pipelineでキャッチするwebhook
+resource "github_repository_webhook" "example" {
+  repository = "your-repository"
+
+  # 通知先の設定
+  configuration {
+    url = aws_codepipeline_webhook.example.url
+    # pipeline側のsecret_tokenと同じ値
+    secret = "VeryRandomStringMoreThan20Byte!"
+    content_type = "json"
+    insecure_ssl = false
+  }
+
+  events = ["push"]
+}
