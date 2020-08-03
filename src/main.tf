@@ -368,12 +368,8 @@ resource "aws_lb_listener" "http" {
 # ホストゾーンはDNSレコードを束ねるリソース　Route 53 でドメインを登録した場合は、自動的に作成されます。同時に4つのNSレコード（ネームサーバー）とSOAレコード(Start of Authority DNSの問い合わせを行ってくれる入り口のドメイン)も作成される
 # ドメインはterraformでは作成できないのでコンソールで登録する
 data "aws_route53_zone" "example" {
-  name = "kumaeers.example.com"
+  name = "kumaeers-blog.com"
 }
-
-# resource "aws_route53_zone" "test_example" {
-#   name = "test.example.com"
-# }
 
 resource "aws_route53_record" "example" {
   zone_id = data.aws_route53_zone.example.zone_id
