@@ -11,5 +11,6 @@ services:
         AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-****************}
     environment:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
+    tty: true
     volumes:
       - ./src:/root/src
