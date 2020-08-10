@@ -162,55 +162,55 @@ resource "aws_lb_listener" "redirect_http_to_https" {
 }
 
 # ターゲットグループ = ALBがリクエストをフォワードする対象
-# resource "aws_lb_target_group" "tech-blog" {
-#   name = "tech-blog"
-#   # EC2インスタンスやIPアドレス、Lambda関数などが指定できる Fargateはipを指定する
-#   target_type = "ip"
-#   # ipを指定した場合はさらに、vpc_id・port・protocolを設定
-#   vpc_id = aws_vpc.tech-blog.id
-#   port   = 80
-#   # ALBからはHTTPプロトコルで接続を行う
-#   protocol = "HTTP"
-#   # ターゲットの登録を解除する前に、ALBが待機する時間
-#   deregistration_delay = 300
+resource "aws_lb_target_group" "tech-blog" {
+  name = "tech-blog"
+  # EC2インスタンスやIPアドレス、Lambda関数などが指定できる Fargateはipを指定する
+  target_type = "ip"
+  # ipを指定した場合はさらに、vpc_id・port・protocolを設定
+  vpc_id = aws_vpc.tech-blog.id
+  port   = 80
+  # ALBからはHTTPプロトコルで接続を行う
+  protocol = "HTTP"
+  # ターゲットの登録を解除する前に、ALBが待機する時間
+  deregistration_delay = 300
 
-#   health_check {
-#     # ヘルスチェックで使用するパス
-#     path = "/"
-#     # 正常判定を行うまでのヘルスチェック実行回数
-#     healthy_threshold = 5
-#     # 異常判定を行うまでのヘルスチェック実行回数
-#     unhealthy_threshold = 2
-#     # ヘルスチェックのタイムアウト時間（秒）
-#     timeout = 5
-#     # ヘルスチェックの実行間隔（秒）
-#     interval = 30
-#     # 正常判定を行うために使用するHTTP ステータスコード
-#     matcher = 200
-#     # ヘルスチェックで使用するポート traffic-portでは上で記述した80が使われる
-#     port = "traffic-port"
-#     # ヘルスチェック時に使用するプロトコル
-#     protocol = "HTTP"
-#   }
+  health_check {
+    # ヘルスチェックで使用するパス
+    path = "/"
+    # 正常判定を行うまでのヘルスチェック実行回数
+    healthy_threshold = 5
+    # 異常判定を行うまでのヘルスチェック実行回数
+    unhealthy_threshold = 2
+    # ヘルスチェックのタイムアウト時間（秒）
+    timeout = 5
+    # ヘルスチェックの実行間隔（秒）
+    interval = 30
+    # 正常判定を行うために使用するHTTP ステータスコード
+    matcher = 200
+    # ヘルスチェックで使用するポート traffic-portでは上で記述した80が使われる
+    port = "traffic-port"
+    # ヘルスチェック時に使用するプロトコル
+    protocol = "HTTP"
+  }
 
-#   # アプリケーションロードバランサーとターゲットグループを、ECSと同時に作成するとエラーになるため依存関係を制御する
-#   depends_on = [aws_lb.tech-blog]
-# }
+  # アプリケーションロードバランサーとターゲットグループを、ECSと同時に作成するとエラーになるため依存関係を制御する
+  depends_on = [aws_lb.tech-blog]
+}
 
-# # ターゲットグループへのリスナールール
-# resource "aws_lb_listener_rule" "tech-blog" {
-#   listener_arn = aws_lb_listener.https.arn
-#   # 数字が小さいほど、優先順位が高い なお、デフォルトルールはもっとも優先順位が低い
-#   priority = 100
+# ターゲットグループへのリスナールール
+resource "aws_lb_listener_rule" "tech-blog" {
+  listener_arn = aws_lb_listener.https.arn
+  # 数字が小さいほど、優先順位が高い なお、デフォルトルールはもっとも優先順位が低い
+  priority = 100
 
-#   action {
-#     type             = "forward"
-#     target_group_arn = aws_lb_target_group.tech-blog.arn
-#   }
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tech-blog.arn
+  }
 
-#   # conditionには、「/img/*」のようなパスベースや「example.com」のようなホストベースなどで、条件を指定でき「/*」はすべてのパスでマッチする
-#   condition {
-#     field  = "path-pattern"
-#     values = ["/*"]
-#   }
-# }
+  # conditionには、「/img/*」のようなパスベースや「example.com」のようなホストベースなどで、条件を指定でき「/*」はすべてのパスでマッチする
+  condition {
+    field  = "path-pattern"
+    values = ["/*"]
+  }
+}

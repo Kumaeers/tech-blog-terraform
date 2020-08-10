@@ -28,13 +28,13 @@ module "http_redirect_sg" {
   cidr_blocks = ["0.0.0.0/0"]
 }
 
-# module "nginx_sg" {
-#   source      = "./module/security_group"
-#   name        = "nginx-sg"
-#   vpc_id      = aws_vpc.tech-blog.id
-#   port        = 80
-#   cidr_blocks = [aws_vpc.tech-blog.cidr_block]
-# }
+module "nginx_sg" {
+  source      = "./module/security_group"
+  name        = "nginx-sg"
+  vpc_id      = aws_vpc.tech-blog.id
+  port        = 80
+  cidr_blocks = [aws_vpc.tech-blog.cidr_block]
+}
 
 # module "redis_sg" {
 #   source      = "./module/security_group"
