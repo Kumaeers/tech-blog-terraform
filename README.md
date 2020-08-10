@@ -7,3 +7,6 @@ docker-compose run terraform bash
 
 ## terraform --version 
 Terraform v0.12.5
+
+## Infrastructure
+![Infra](https://github.com/Kumaeers/tech-blog-terraform/tree/develop/doc/infrastructure.svg)
