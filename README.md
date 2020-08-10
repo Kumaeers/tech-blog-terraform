@@ -9,4 +9,4 @@ docker-compose run terraform bash
 Terraform v0.12.5
 
 ## Infrastructure
-![Infra](https://github.com/Kumaeers/tech-blog-terraform/tree/develop/doc/infrastructure.svg)
+![color:ff69b4](https://github.com/Kumaeers/tech-blog-terraform/tree/develop/doc/infrastructure.svg)
