@@ -1,8 +1,10 @@
 variable "name" {
+  type    = "string"
   default = "tech-blog"
 }
 
 variable "region" {
+  type    = "string"
   default = "ap-northeast-1"
 }
 

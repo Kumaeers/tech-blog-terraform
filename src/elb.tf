@@ -73,7 +73,7 @@ variable "domain" {
 data "aws_route53_zone" "tech-blog" {
   # name = var.domain
   zone_id = "Z019681625JWIOC1UGTL"
-  vpc_id = aws_vpc.tech-blog.id
+  vpc_id  = aws_vpc.tech-blog.id
 }
 
 resource "aws_route53_record" "tech-blog" {

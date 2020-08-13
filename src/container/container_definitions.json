@@ -1,15 +1,14 @@
   
 [
   {
-    "name": "tech-blog",
-    "image": "nginx:latest",
-    "essential": true,
+    "name": "${name}",
+    "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:${tag}",
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
-        "awslogs-region": "ap-northeast-1",
-        "awslogs-stream-prefix": "nginx",
-        "awslogs-group": "/ecs/tech-blog"
+        "awslogs-region": "${region}",
+        "awslogs-group": "/ecs/${name}",
+        "awslogs-stream-prefix": "vue"
       }
     },
     "portMappings": [

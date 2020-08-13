@@ -3,6 +3,7 @@ provider "aws" {
   region  = "ap-northeast-1"
 }
 
+
 # # バッチ用CloudWatch Logs
 # resource "aws_cloudwatch_log_group" "for_ecs_scheduled_tasks" {
 #   name              = "/ecs-scheduled-tasks/example"

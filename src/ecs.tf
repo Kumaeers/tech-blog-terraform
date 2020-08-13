@@ -3,6 +3,19 @@ resource "aws_ecs_cluster" "tech-blog" {
   name = "tech-blog"
 }
 
+
+# template_fileは変数を流し込んだものをレンダリングして返す
+data "template_file" "container_definitions" {
+  template = file("./container/container_definitions.json")
+
+  vars = {
+    tag = "latest"
+    name = var.name
+    account_id = data.aws_caller_identity.self.account_id
+    region     = var.region
+  }
+}
+
 # コンテナの実行単位 は「タスク」で「タスク定義」から生成される　
 # クラスがタスク定義、タスクがインスタンスという関係
 # たとえば、Railsアプリケーションの前段にnginxを配置する場合、ひとつのタスクの中でRails コンテナとnginxコンテナが実行される
@@ -15,7 +28,7 @@ resource "aws_ecs_task_definition" "tech-blog" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   # 実際にタスクで実行するコンテナの定義
-  container_definitions = file("./container/container_definitions.json")
+  container_definitions = data.template_file.container_definitions.rendered
   # Docker コンテナがCloudWatch Logs にログを投げられるようにする（FARGATEではコンテナのログを直接確認できないため)
   execution_role_arn = module.ecs_task_execution_role.iam_role_arn
 }
