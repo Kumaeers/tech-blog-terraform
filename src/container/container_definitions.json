@@ -2,7 +2,7 @@
 [
   {
     "name": "${name}",
-    "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:${tag}",
+    "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:vue",
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {

@@ -9,7 +9,6 @@ data "template_file" "container_definitions" {
   template = file("./container/container_definitions.json")
 
   vars = {
-    tag = "latest"
     name = var.name
     account_id = data.aws_caller_identity.self.account_id
     region     = var.region
