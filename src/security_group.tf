@@ -28,6 +28,14 @@ module "http_redirect_sg" {
   cidr_blocks = ["0.0.0.0/0"]
 }
 
+module "http_go_sg" {
+  source = "./module/security_group"
+  name   = "http-redirect-g0"
+  vpc_id = aws_vpc.tech-blog.id
+  port        = 8082
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
 module "nginx_sg" {
   source      = "./module/security_group"
   name        = "nginx-sg"

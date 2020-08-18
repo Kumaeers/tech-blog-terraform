@@ -3,11 +3,12 @@
   {
     "name": "${name}",
     "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:vue",
+    "essential": true,
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
         "awslogs-region": "${region}",
-        "awslogs-group": "/ecs/${name}",
+        "awslogs-group": "/ecs/vue",
         "awslogs-stream-prefix": "vue"
       }
     },
@@ -17,5 +18,24 @@
         "containerPort": 80
       }
     ]
+  },
+  {
+    "name": "go",
+    "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:go",
+    "essential": true,
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": 8082
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "${region}",
+        "awslogs-group": "/ecs/go",
+        "awslogs-stream-prefix": "go"
+      }
+    }
   }
 ]
