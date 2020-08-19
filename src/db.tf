@@ -104,11 +104,17 @@ resource "aws_db_instance" "tech-blog" {
   # メンテナンスのタイミング メンテナンス自体は無効化することはできない
   maintenance_window         = "mon:10:10-mon:10:40"
   auto_minor_version_upgrade = false
-  # 削除保護 本番稼働したらtrueにする
-  # deletion_protection = true
+  # ~~テスト用~~
   deletion_protection = false
-  # インスタンス削除時のスナップショット作成
-  skip_final_snapshot = false
+  # インスタンス削除時のスナップショット作成しない
+  skip_final_snapshot = true
+  # ~~本番稼働したら~~
+  # 削除保護
+  # deletion_protection = true
+  # インスタンス削除時のスナップショット作成する
+  # skip_final_snapshot = false
+  # スナップショットをとるなら必須
+  # final_snapshot_identifier  = "example-finale-snapshot-id" 
   port                = 3306
   # RDSでは一部の設定変更に再起動が伴うので即時反映を避ける
   apply_immediately = false
