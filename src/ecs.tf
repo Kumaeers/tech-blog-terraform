@@ -58,16 +58,10 @@ resource "aws_ecs_service" "tech-blog" {
   }
 
   # load_balancerでターゲットグループとコンテナの名前・ポート番号を指定し、ロードバランサーと関連付ける
-  # load_balancer {
-  #   target_group_arn = aws_lb_target_group.tech-blog.arn
-  #   container_name   = "tech-blog"
-  #   container_port   = 80
-  # }
-
   load_balancer {
-    target_group_arn = aws_lb_target_group.tech-blog-go.arn
-    container_name   = "go"
-    container_port   = 8082
+    target_group_arn = aws_lb_target_group.tech-blog.arn
+    container_name   = "tech-blog"
+    container_port   = 80
   }
 
   # 　Fargate の場合、デプロイのたびにタスク定義が更新され、plan時に差分が出るのを無視する

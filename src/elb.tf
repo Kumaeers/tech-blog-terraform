@@ -26,7 +26,6 @@ resource "aws_lb" "tech-blog" {
     module.http_sg.security_group_id,
     module.https_sg.security_group_id,
     module.http_redirect_sg.security_group_id,
-    module.http_go_sg.security_group_id,
   ]
 }
 
@@ -162,22 +161,6 @@ resource "aws_lb_listener" "redirect_http_to_https" {
   }
 }
 
-resource "aws_lb_listener" "go-listener" {
-  load_balancer_arn = aws_lb.tech-blog.arn
-  port              = "8082"
-  protocol          = "HTTP"
-
-  default_action {
-    type = "fixed-response"
-
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "これは[HTTPS]です"
-      status_code  = "200"
-    }
-  }
-}
-
 # ターゲットグループ = ALBがリクエストをフォワードする対象
 resource "aws_lb_target_group" "tech-blog" {
   name = "tech-blog"
@@ -186,41 +169,6 @@ resource "aws_lb_target_group" "tech-blog" {
   # ipを指定した場合はさらに、vpc_id・port・protocolを設定
   vpc_id = aws_vpc.tech-blog.id
   port   = 80
-  # ALBからはHTTPプロトコルで接続を行う
-  protocol = "HTTP"
-  # ターゲットの登録を解除する前に、ALBが待機する時間
-  deregistration_delay = 300
-
-  health_check {
-    # ヘルスチェックで使用するパス
-    path = "/"
-    # 正常判定を行うまでのヘルスチェック実行回数
-    healthy_threshold = 5
-    # 異常判定を行うまでのヘルスチェック実行回数
-    unhealthy_threshold = 2
-    # ヘルスチェックのタイムアウト時間（秒）
-    timeout = 5
-    # ヘルスチェックの実行間隔（秒）
-    interval = 30
-    # 正常判定を行うために使用するHTTP ステータスコード
-    matcher = 200
-    # ヘルスチェックで使用するポート traffic-portでは上で記述した80が使われる
-    port = "traffic-port"
-    # ヘルスチェック時に使用するプロトコル
-    protocol = "HTTP"
-  }
-
-  # アプリケーションロードバランサーとターゲットグループを、ECSと同時に作成するとエラーになるため依存関係を制御する
-  depends_on = [aws_lb.tech-blog]
-}
-
-resource "aws_lb_target_group" "tech-blog-go" {
-  name = "tech-blog-go"
-  # EC2インスタンスやIPアドレス、Lambda関数などが指定できる Fargateはipを指定する
-  target_type = "ip"
-  # ipを指定した場合はさらに、vpc_id・port・protocolを設定
-  vpc_id = aws_vpc.tech-blog.id
-  port   = 8082
   # ALBからはHTTPプロトコルで接続を行う
   protocol = "HTTP"
   # ターゲットの登録を解除する前に、ALBが待機する時間
@@ -261,21 +209,6 @@ resource "aws_lb_listener_rule" "tech-blog" {
   }
 
   # conditionには、「/img/*」のようなパスベースや「example.com」のようなホストベースなどで、条件を指定でき「/*」はすべてのパスでマッチする
-  condition {
-    field  = "path-pattern"
-    values = ["/*"]
-  }
-}
-
-resource "aws_lb_listener_rule" "tech-blog-go" {
-  listener_arn = aws_lb_listener.go-listener.arn
-  priority = 100
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tech-blog-go.arn
-  }
-
   condition {
     field  = "path-pattern"
     values = ["/*"]

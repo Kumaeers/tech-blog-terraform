@@ -28,14 +28,6 @@ module "http_redirect_sg" {
   cidr_blocks = ["0.0.0.0/0"]
 }
 
-module "http_go_sg" {
-  source = "./module/security_group"
-  name   = "http-redirect-g0"
-  vpc_id = aws_vpc.tech-blog.id
-  port        = 8082
-  cidr_blocks = ["0.0.0.0/0"]
-}
-
 module "nginx_sg" {
   source      = "./module/security_group"
   name        = "nginx-sg"
@@ -52,12 +44,11 @@ module "nginx_sg" {
 #   cidr_blocks = [aws_vpc.tech-blog.cidr_block]
 # }
 
-
-# module "mysql_sg" {
-#   source = "./module/security_group"
-#   name   = "mysql-sg"
-#   vpc_id = aws_vpc.tech-blog.id
-#   port   = 3306
-#   # vpc内のみ通信許可
-#   cidr_blocks = [aws_vpc.tech-blog.cidr_block]
-# }
+module "mysql_sg" {
+  source = "./module/security_group"
+  name   = "mysql-sg"
+  vpc_id = aws_vpc.tech-blog.id
+  port   = 3306
+  # vpc内のみ通信許可
+  cidr_blocks = [aws_vpc.tech-blog.cidr_block]
+}

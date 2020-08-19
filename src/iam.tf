@@ -28,6 +28,7 @@ data "aws_iam_policy_document" "ecs_task_execution" {
   # 上で参照しているのを継承する
   source_json = data.aws_iam_policy.ecs_task_execution_role_policy.policy
 
+  # ECSにSSMパラメータストアの値を参照する権限を付与
   statement {
     effect    = "Allow"
     actions   = ["ssm:GetParameters", "kms:Decrypt"]

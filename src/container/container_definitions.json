@@ -36,6 +36,13 @@
         "awslogs-group": "/ecs/go",
         "awslogs-stream-prefix": "go"
       }
-    }
+    },
+    "secrets": [
+      {
+        "name": "DSN",
+        "valueFrom": "/db/dsn"
+      }
+    ],
+    "command" : ["/usr/bin/env"]
   }
 ]
