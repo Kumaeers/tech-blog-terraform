@@ -3,7 +3,6 @@
   {
     "name": "${name}",
     "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:vue",
-    "essential": true,
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
@@ -22,7 +21,6 @@
   {
     "name": "go",
     "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:go",
-    "essential": true,
     "portMappings": [
       {
         "protocol": "tcp",
