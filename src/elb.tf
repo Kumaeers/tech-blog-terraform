@@ -210,7 +210,8 @@ resource "aws_lb_listener_rule" "tech-blog" {
 
   # conditionには、「/img/*」のようなパスベースや「example.com」のようなホストベースなどで、条件を指定でき「/*」はすべてのパスでマッチする
   condition {
-    field  = "path-pattern"
-    values = ["/*"]
+    path_pattern {
+      values = ["*"]
+    }
   }
 }
