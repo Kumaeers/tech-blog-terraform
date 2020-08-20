@@ -1,0 +1,46 @@
+  
+[
+  {
+    "name": "${name}",
+    "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:vue",
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "${region}",
+        "awslogs-group": "/ecs/vue",
+        "awslogs-stream-prefix": "vue"
+      }
+    },
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": 80
+      }
+    ]
+  },
+  {
+    "name": "go",
+    "image": "${account_id}.dkr.ecr.${region}.amazonaws.com/${name}:go",
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": 8082
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "${region}",
+        "awslogs-group": "/ecs/go",
+        "awslogs-stream-prefix": "go"
+      }
+    },
+    "secrets": [
+      {
+        "name": "DSN",
+        "valueFrom": "/db/dsn"
+      }
+    ],
+    "command" : ["/usr/bin/env"]
+  }
+]

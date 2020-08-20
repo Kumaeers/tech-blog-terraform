@@ -1,7 +1,7 @@
-version: '3'
+version: "3"
 services:
   terraform:
-    container_name: 'terraform'
+    container_name: "terraform"
     image: local/terraform
     build:
       context: ./
@@ -9,5 +9,8 @@ services:
       args:
         AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-**********}
         AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-****************}
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+    tty: true
     volumes:
-     - ./src:/root/src
+      - ./src:/root/src

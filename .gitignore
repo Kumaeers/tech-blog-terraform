@@ -9,3 +9,5 @@
 
 # .tfvars files
 *.tfvars
+
+.env
