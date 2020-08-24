@@ -42,7 +42,8 @@ resource "aws_codepipeline" "tech-blog" {
       configuration = {
         Owner  = "Kumaeers"
         Repo   = "tech-blog"
-        Branch = "master"
+        # Branch = "master"
+        Branch = "deploy"
         # CodePipelineの起動はWebhookから行うため、PollForSourceChangesをfalseにしてポーリングは無効
         PollForSourceChanges = false
       }

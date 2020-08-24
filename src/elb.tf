@@ -95,54 +95,54 @@ output "domain_name" {
   value = aws_route53_record.tech-blog.name
 }
 
-resource "aws_acm_certificate" "tech-blog" {
-  domain_name = aws_route53_record.tech-blog.name
-  # ドメイン名を追加したければ[]この中に指定する
-  subject_alternative_names = []
-  # 自動更新したい場合はドメインの所有権の検証方法をDNS検証にする
-  validation_method = "DNS"
+# resource "aws_acm_certificate" "tech-blog" {
+#   domain_name = aws_route53_record.tech-blog.name
+#   # ドメイン名を追加したければ[]この中に指定する
+#   subject_alternative_names = []
+#   # 自動更新したい場合はドメインの所有権の検証方法をDNS検証にする
+#   validation_method = "DNS"
 
-  # ライフサイクルはTerraform独自の機能で、すべてのリソースに設定可能
-  # リソースを作成してから、リソースを削除する」という逆の挙動に変更
-  lifecycle {
-    create_before_destroy = true
-  }
-}
+#   # ライフサイクルはTerraform独自の機能で、すべてのリソースに設定可能
+#   # リソースを作成してから、リソースを削除する」という逆の挙動に変更
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
 
-resource "aws_route53_record" "tech-blog_certificate" {
-  name    = aws_acm_certificate.tech-blog.domain_validation_options[0].resource_record_name
-  type    = aws_acm_certificate.tech-blog.domain_validation_options[0].resource_record_type
-  records = [aws_acm_certificate.tech-blog.domain_validation_options[0].resource_record_value]
-  zone_id = data.aws_route53_zone.tech-blog.id
-  ttl     = 60
-}
+# resource "aws_route53_record" "tech-blog_certificate" {
+#   name    = aws_acm_certificate.tech-blog.domain_validation_options[0].resource_record_name
+#   type    = aws_acm_certificate.tech-blog.domain_validation_options[0].resource_record_type
+#   records = [aws_acm_certificate.tech-blog.domain_validation_options[0].resource_record_value]
+#   zone_id = data.aws_route53_zone.tech-blog.id
+#   ttl     = 60
+# }
 
 # SSL 証明書の検証完了まで待機
-resource "aws_acm_certificate_validation" "tech-blog" {
-  certificate_arn         = aws_acm_certificate.tech-blog.arn
-  validation_record_fqdns = [aws_route53_record.tech-blog_certificate.fqdn]
-}
+# resource "aws_acm_certificate_validation" "tech-blog" {
+#   certificate_arn         = aws_acm_certificate.tech-blog.arn
+#   validation_record_fqdns = [aws_route53_record.tech-blog_certificate.fqdn]
+# }
 
 # httpsのリスナー追加
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.tech-blog.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  # 作成したSSL証明書を設定
-  certificate_arn = aws_acm_certificate.tech-blog.arn
-  # AWSで推奨されているセキュリティポリシーを設定
-  ssl_policy = "ELBSecurityPolicy-2016-08"
+# resource "aws_lb_listener" "https" {
+#   load_balancer_arn = aws_lb.tech-blog.arn
+#   port              = "443"
+#   protocol          = "HTTPS"
+#   # 作成したSSL証明書を設定
+#   certificate_arn = aws_acm_certificate.tech-blog.arn
+#   # AWSで推奨されているセキュリティポリシーを設定
+#   ssl_policy = "ELBSecurityPolicy-2016-08"
 
-  default_action {
-    type = "fixed-response"
+#   default_action {
+#     type = "fixed-response"
 
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "これは[HTTPS]です"
-      status_code  = "200"
-    }
-  }
-}
+#     fixed_response {
+#       content_type = "text/plain"
+#       message_body = "これは[HTTPS]です"
+#       status_code  = "200"
+#     }
+#   }
+# }
 
 # HTTPをHTTPSへリダイレクトするリスナー
 resource "aws_lb_listener" "redirect_http_to_https" {
@@ -199,7 +199,8 @@ resource "aws_lb_target_group" "tech-blog" {
 
 # ターゲットグループへのリスナールール
 resource "aws_lb_listener_rule" "tech-blog" {
-  listener_arn = aws_lb_listener.https.arn
+  # listener_arn = aws_lb_listener.https.arn
+  listener_arn = aws_lb_listener.http.arn
   # 数字が小さいほど、優先順位が高い なお、デフォルトルールはもっとも優先順位が低い
   priority = 100
 

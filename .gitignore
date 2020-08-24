@@ -11,3 +11,5 @@
 *.tfvars
 
 .env
+
+command.txt
