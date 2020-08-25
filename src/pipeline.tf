@@ -42,8 +42,8 @@ resource "aws_codepipeline" "tech-blog" {
       configuration = {
         Owner  = "Kumaeers"
         Repo   = "tech-blog"
-        # Branch = "master"
-        Branch = "deploy"
+        Branch = "master"
+        # Branch = "deploy"
         # CodePipelineの起動はWebhookから行うため、PollForSourceChangesをfalseにしてポーリングは無効
         PollForSourceChanges = false
       }
@@ -105,7 +105,7 @@ resource "aws_codepipeline_webhook" "tech-blog" {
 
   # これはtfstateに書かれるが,gitignoreしてる
   authentication_configuration {
-    secret_token = "VeryRandomStringMoreThan20Byte!"
+    secret_token = data.aws_caller_identity.self.account_id
   }
 
   # 起動条件　pipelineでmasterブランチを選択してるためそこになる
@@ -128,7 +128,7 @@ resource "github_repository_webhook" "tech-blog" {
   configuration {
     url = aws_codepipeline_webhook.tech-blog.url
     # pipeline側のsecret_tokenと同じ値
-    secret       = "VeryRandomStringMoreThan20Byte!"
+    secret       = data.aws_caller_identity.self.account_id
     content_type = "json"
     insecure_ssl = false
   }
