@@ -172,7 +172,8 @@ resource "aws_lb_target_group" "tech-blog" {
   # ALBからはHTTPプロトコルで接続を行う
   protocol = "HTTP"
   # ターゲットの登録を解除する前に、ALBが待機する時間
-  deregistration_delay = 300
+  # deregistration_delay = 300
+  deregistration_delay = 30
 
   health_check {
     # ヘルスチェックで使用するパス
