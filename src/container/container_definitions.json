@@ -39,6 +39,10 @@
       {
         "name": "DSN",
         "valueFrom": "/db/dsn"
+      },
+      {
+        "name": "GOOGLE_APPLICATION_CREDENTIALS",
+        "valueFrom": "/firebase/secrets"
       }
     ],
     "command" : ["/usr/bin/env"]
