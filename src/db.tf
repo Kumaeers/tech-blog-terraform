@@ -1,8 +1,8 @@
 # RDSの暗号化のためのマスターキー
 resource "aws_kms_key" "tech-blog" {
-  description = "For tech-blog's RDS Customer Master Key"
-  enable_key_rotation = true
-  is_enabled = true
+  description             = "For tech-blog's RDS Customer Master Key"
+  enable_key_rotation     = true
+  is_enabled              = true
   deletion_window_in_days = 30
 }
 
@@ -80,7 +80,7 @@ resource "aws_db_instance" "tech-blog" {
   # skip_final_snapshot = false
   # スナップショットをとるなら必須
   # final_snapshot_identifier  = "example-finale-snapshot-id" 
-  port                = 3306
+  port = 3306
   # RDSでは一部の設定変更に再起動が伴うので即時反映を避ける
   apply_immediately = false
   # VPC 内からの通信のみ許可

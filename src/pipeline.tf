@@ -40,8 +40,8 @@ resource "aws_codepipeline" "tech-blog" {
       output_artifacts = ["Source"]
 
       configuration = {
-        Owner  = "Kumaeers"
-        Repo   = "tech-blog"
+        Owner = "Kumaeers"
+        Repo  = "tech-blog"
         # Branch = "master"
         Branch = "deploy"
         # CodePipelineの起動はWebhookから行うため、PollForSourceChangesをfalseにしてポーリングは無効

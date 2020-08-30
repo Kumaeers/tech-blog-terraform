@@ -24,36 +24,12 @@ resource "aws_lb" "tech-blog" {
 
   security_groups = [
     module.http_sg.security_group_id,
-    module.https_sg.security_group_id,
-    module.http_redirect_sg.security_group_id,
+    module.https_sg.security_group_id
   ]
 }
 
 output "alb_dns_name" {
   value = aws_lb.tech-blog.dns_name
-}
-
-# リスナーでALBがどのポートのリクエストを受け付けるか定義
-# リスナーは複数ALBにアタッチできる
-resource "aws_lb_listener" "http" {
-  # listenerのルールは複数設定でき、異なるアクションを実行できる
-  load_balancer_arn = aws_lb.tech-blog.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  # どのルールにも合致しなければdefaultが実行される
-  # ・forward： リクエストを別のターゲットグループに転送
-  # ・fixed-response： 固定のHTTP レスポンスを応答
-  # ・redirect： 別のURL にリダイレクト
-  default_action {
-    type = "fixed-response"
-
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "これは[HTTP]です"
-      status_code  = "200"
-    }
-  }
 }
 
 variable "domain" {
@@ -123,6 +99,29 @@ resource "aws_acm_certificate_validation" "tech-blog" {
   validation_record_fqdns = [aws_route53_record.tech-blog_certificate.fqdn]
 }
 
+# リスナーでALBがどのポートのリクエストを受け付けるか定義
+# リスナーは複数ALBにアタッチできる
+resource "aws_lb_listener" "http" {
+  # listenerのルールは複数設定でき、異なるアクションを実行できる
+  load_balancer_arn = aws_lb.tech-blog.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  # どのルールにも合致しなければdefaultが実行される
+  # ・forward： リクエストを別のターゲットグループに転送
+  # ・fixed-response： 固定のHTTP レスポンスを応答
+  # ・redirect： 別のURL にリダイレクト
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
 # httpsのリスナー追加
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.tech-blog.arn
@@ -140,23 +139,6 @@ resource "aws_lb_listener" "https" {
       content_type = "text/plain"
       message_body = "これは[HTTPS]です"
       status_code  = "200"
-    }
-  }
-}
-
-# HTTPをHTTPSへリダイレクトするリスナー
-resource "aws_lb_listener" "redirect_http_to_https" {
-  load_balancer_arn = aws_lb.tech-blog.arn
-  port              = "8080"
-  protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
     }
   }
 }
