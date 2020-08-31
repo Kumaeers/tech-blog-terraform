@@ -69,17 +69,3 @@ resource "aws_ecs_service" "tech-blog" {
     ignore_changes = [task_definition]
   }
 }
-
-
-# CloudWatchLogsでECSのログを取る
-resource "aws_cloudwatch_log_group" "for_ecs_vue" {
-  name = "/ecs/vue"
-  # ログの保持期間
-  retention_in_days = 14
-}
-
-resource "aws_cloudwatch_log_group" "for_ecs_go" {
-  name = "/ecs/go"
-  # ログの保持期間
-  retention_in_days = 14
-}

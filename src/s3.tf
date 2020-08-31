@@ -28,3 +28,17 @@ resource "aws_s3_bucket" "artifact" {
     }
   }
 }
+
+resource "aws_s3_bucket" "operation" {
+  bucket = "operation-tech-blog"
+
+  force_destroy = true
+
+  lifecycle_rule {
+    enabled = true
+
+    expiration {
+      days = "180"
+    }
+  }
+}
