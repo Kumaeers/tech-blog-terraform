@@ -22,10 +22,8 @@ resource "aws_ecs_task_definition" "tech-blog" {
   # タスク定義名のプレフィックスのこと tech-blog:1のようになる
   family = "tech-blog"
   # cpuに256を指定する場合、memoryで指定できる値は512・1024・2048のいずれか
-  # cpu                      = "256"
-  # memory                   = "512"
-    # cpu                      = "256"
-  # memory                   = "512"
+  cpu                      = "256"
+  memory                   = "512"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   # 実際にタスクで実行するコンテナの定義
@@ -41,8 +39,7 @@ resource "aws_ecs_service" "tech-blog" {
   cluster         = aws_ecs_cluster.tech-blog.arn
   task_definition = aws_ecs_task_definition.tech-blog.arn
   # 2個以上コンテナ起動する
-  # desired_count = 2
-  desired_count = 1
+  desired_count = 2
   launch_type   = "FARGATE"
   # latestが最新ではないので明示的にする必要あり
   platform_version = "1.3.0"
