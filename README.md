@@ -1,4 +1,4 @@
-# tech-blog-terraform
+# terraform_fargate_CI/CD
 
 ## ローカルでのterraform実行コマンド
 ```
